@@ -79,6 +79,10 @@ if not api_key:
     st.warning(" Please enter your Groq API Key (or set GROQ_API_KEY in .env) ")
     st.stop()
 
+# TEMP DEBUG — remove after fixing
+st.sidebar.write("Key found:", bool(api_key))
+st.sidebar.write("Key preview:", api_key[:8] + "..." if api_key else "NONE")
+
 # ── Embeddings and LLM ────────────────────────────────────────────────────────
 embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2",
@@ -87,8 +91,7 @@ embeddings = HuggingFaceEmbeddings(
 
 llm = ChatGroq(
     groq_api_key=api_key,
-    # model_name="llama-3.3-70b-versatile"
-    model_name="llama-3.1-8b-instant"
+    model_name="llama-3.3-70b-versatile"
 )
 
 # ── File upload ───────────────────────────────────────────────────────────────
@@ -276,4 +279,3 @@ if user_q:
         for i, doc in enumerate(docs, 1):
             st.markdown(f"**{i}. {doc.metadata.get('source_file','Unknown')} (p{doc.metadata.get('page','?')})**")
             st.write(doc.page_content[:500] + ("..." if len(doc.page_content) > 500 else ""))
-
