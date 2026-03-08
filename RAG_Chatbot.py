@@ -16,12 +16,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
-# ── setup ─────────────────────────────────────────────────────────────────────
+# setup 
 load_dotenv()
 st.set_page_config(page_title="RAG Q&A ", layout="wide")
 st.title("📝 RAG Q&A with Multiple PDFs + Chat History")
 
-# ── Persistent memory helpers ─────────────────────────────────────────────────
+# Persistent memory helpers
 MEMORY_DIR = "chat_memory"
 os.makedirs(MEMORY_DIR, exist_ok=True)
 
@@ -55,33 +55,18 @@ def save_history_to_disk(key: str, history: ChatMessageHistory) -> None:
     with open(_memory_path(key), "w", encoding="utf-8") as f:
         json.dump(records, f, ensure_ascii=False, indent=2)
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# Sidebar 
 with st.sidebar:
     st.header("⚙️ Config")
     api_key_input = st.text_input("Groq API Key", type="password")
     st.caption("Upload PDFs -> Ask questions -> Get Answers")
 
-# On Streamlit Cloud, secrets are accessed via st.secrets, not os.getenv
-def _get_api_key():
-    # 1. Sidebar input (highest priority)
-    if api_key_input:
-        return api_key_input
-    # 2. Streamlit Cloud secrets
-    try:
-        return st.secrets["GROQ_API_KEY"]
-    except Exception:
-        pass
-    # 3. .env file (local development)
-    return os.getenv("GROQ_API_KEY")
-
-api_key = _get_api_key()
+api_key = api_key_input or os.getenv("GROQ_API_KEY")
 if not api_key:
     st.warning(" Please enter your Groq API Key (or set GROQ_API_KEY in .env) ")
     st.stop()
 
-
-
-# ── Embeddings and LLM ────────────────────────────────────────────────────────
+# Embeddings and LLM
 embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2",
     encode_kwargs={"normalize_embeddings": True}
@@ -89,10 +74,11 @@ embeddings = HuggingFaceEmbeddings(
 
 llm = ChatGroq(
     groq_api_key=api_key,
-    model_name="llama-3.3-70b-versatile"
+    # model_name="llama-3.3-70b-versatile"
+    model_name="llama-3.1-8b-instant"
 )
 
-# ── File upload ───────────────────────────────────────────────────────────────
+# File upload 
 uploaded_files = st.file_uploader(
     " 📚 Upload PDF files",
     type="pdf",
@@ -103,11 +89,10 @@ if not uploaded_files:
     st.info("Please upload one or more PDFs to begin")
     st.stop()
 
-# ── Doc key: fingerprint of current uploaded files ───────────────────────────
-# Uses getvalue() (always works on Streamlit UploadedFile) + filename.
-# This key scopes BOTH the vectorstore and the chat history to the exact
-# set of documents currently uploaded. Switching documents automatically
-# switches to that document's own history (stored permanently on disk).
+# Doc key: fingerprint of current uploaded files 
+# We use getvalue() (always works on Streamlit UploadedFile) + filename.
+# This key scopes BOTH the vectorstore and the chat history to the exact set of documents currently uploaded. 
+# Switching documents automatically switches to that document's own history (stored permanently on disk).
 doc_key = hashlib.md5(
     str(tuple(sorted(
         (f.name, hashlib.md5(f.getvalue()).hexdigest())
@@ -115,7 +100,7 @@ doc_key = hashlib.md5(
     ))).encode()
 ).hexdigest()[:12]
 
-# ── Build vectorstore only when doc_key changes ───────────────────────────────
+# Build vectorstore only when doc_key changes 
 if st.session_state.get("doc_key") != doc_key:
 
     all_docs = []
@@ -161,7 +146,7 @@ st.success(f"✅ Loaded {st.session_state.num_pages} pages from {len(uploaded_fi
 st.sidebar.write(f"🔍 Indexed {st.session_state.indexed_chunks} chunks for retrieval")
 st.sidebar.write(f"💾 Memory: `{os.path.abspath(MEMORY_DIR)}`")
 
-# ── Helper ────────────────────────────────────────────────────────────────────
+# Helper 
 def _join_docs(docs, max_chars=7000):
     chunks, total = [], 0
     for d in docs:
@@ -172,7 +157,7 @@ def _join_docs(docs, max_chars=7000):
         total += len(piece)
     return "\n\n---\n\n".join(chunks)
 
-# ── Prompts ───────────────────────────────────────────────────────────────────
+# Prompts 
 contextualize_q_prompt = ChatPromptTemplate.from_messages([
     ("system",
      "You are a search query optimizer for a document retrieval system.\n\n"
@@ -211,7 +196,7 @@ qa_prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}")
 ])
 
-# ── Chat history (scoped per session + document) ──────────────────────────────
+# Chat history (scoped per session + document) 
 if "chathistory" not in st.session_state:
     st.session_state.chathistory = {}
 
@@ -222,7 +207,7 @@ def get_history(session_id: str) -> ChatMessageHistory:
         st.session_state.chathistory[scoped_key] = load_history_from_disk(scoped_key)
     return st.session_state.chathistory[scoped_key]
 
-# ── Chat UI ───────────────────────────────────────────────────────────────────
+# Chat UI 
 session_id = st.text_input(" 🆔 Session ID ", value="default_session")
 user_q = st.chat_input("💬 Ask a question...")
 
