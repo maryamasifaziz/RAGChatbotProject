@@ -175,6 +175,9 @@ contextualize_q_prompt = ChatPromptTemplate.from_messages([
      "'the previous one') by replacing them with the actual noun/concept from the chat history.\n"
      "- If the user is asking a follow-up (e.g. 'explain more', 'give an example', 'why?'), "
      "expand it into a full question using the topic from the previous exchange.\n"
+     "- If the user asks for a table, chart, or summary of financial data (e.g. 'give me a table', "
+     "'show financials', 'revenue table'), rewrite it as a specific data retrieval query such as "
+     "'revenue net income operating profit financial figures' so the right chunks are retrieved.\n"
      "- Keep the query focused and specific — avoid vague terms.\n"
      "- Output ONLY the rewritten query. No explanation, no punctuation at the end."),
     MessagesPlaceholder("chat_history"),
@@ -187,6 +190,11 @@ qa_prompt = ChatPromptTemplate.from_messages([
      "ANSWER QUALITY RULES:\n"
      "1. Structure your answer clearly — use headings, bullet points, or numbered steps when the "
      "topic has multiple parts or a sequence.\n"
+     "1a. NEVER fabricate, invent, estimate, or assume ANY information — this applies to ALL "
+     "output formats: tables, lists, summaries, examples, charts, timelines, or any other format.\n"
+     "Every single fact, number, name, and data point in your answer MUST come directly from "
+     "the provided context. If the context does not contain enough information, say so explicitly "
+     "instead of filling gaps with guesses or general knowledge.\n"
      "2. Be thorough and detailed. Do not give one-line answers. Explain the 'why' and 'how', "
      "not just the 'what'.\n"
      "3. Use examples, figures, or data from the context to support your answer when available.\n"
