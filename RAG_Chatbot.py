@@ -196,8 +196,9 @@ qa_prompt = ChatPromptTemplate.from_messages([
      "5. Use ONLY the provided context. Do NOT use outside knowledge.\n"
      "6. If the context partially covers the question, answer what is covered and explicitly state "
      "what is not addressed in the documents.\n"
-     "7. Only reply 'Out of scope - not found in provided documents.' if the context has "
-     "absolutely zero relevant information.\n\n"
+     "7. If the question cannot be answered using the provided context, reply EXACTLY:\n"
+     "'Out of scope - not found in provided documents.'\n"
+     "Do NOT mention general knowledge. Do NOT say you could answer from outside sources.\n\n"
      "Context:\n{context}"),
     MessagesPlaceholder("chat_history"),
     ("human", "{input}")
